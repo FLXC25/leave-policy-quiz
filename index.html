@@ -11,11 +11,13 @@
       font-family: 'Segoe UI', sans-serif;
       text-align: center;
     }
+
     h2 {
       font-weight: 700;
       color: #0a3d62;
       margin-bottom: 20px;
     }
+
     .question-block {
       background: white;
       padding: 24px;
@@ -25,13 +27,39 @@
       max-width: 700px;
       text-align: left;
     }
-    .correct { background-color: #d4edda !important; border-left: 6px solid #28a745; }
-    .incorrect { background-color: #f8d7da !important; border-left: 6px solid #dc3545; }
-    .form-check { padding-left: 1.5rem; }
-    .btn-primary { background-color: #2e86de; border: none; }
-    .btn-secondary { background-color: #636e72; border: none; }
-    .btn:hover { opacity: 0.9; }
-    #submitButtonContainer { margin-bottom: 60px; }
+
+    .correct {
+      background-color: #d4edda !important;
+      border-left: 6px solid #28a745;
+    }
+
+    .incorrect {
+      background-color: #f8d7da !important;
+      border-left: 6px solid #dc3545;
+    }
+
+    .form-check {
+      padding-left: 1.5rem;
+    }
+
+    .btn-primary {
+      background-color: #2e86de;
+      border: none;
+    }
+
+    .btn-secondary {
+      background-color: #636e72;
+      border: none;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    #submitButtonContainer {
+      margin-bottom: 60px;
+    }
+
     #scoreCard {
       display: none;
       background: #ffffffcc;
@@ -41,48 +69,62 @@
       margin: 40px auto;
       box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
     }
-    #timerBarContainer {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 10px 0;
+
+    #timerDisplay {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      color: #28a745;
+      font-size: 18px;
+      z-index: 999;
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
     }
-    #timerBar {
-      height: 10px;
-      background: #28a745;
-      transition: width 1s linear;
-    }
+
     #sidebar {
       position: fixed;
-      top: 80px;
-      right: 10px;
-      width: 120px;
-      background: #ffffffcc;
-      padding: 10px;
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      left: 20px;
+      top: 100px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 16px;
+      border-radius: 10px;
       max-height: 80vh;
       overflow-y: auto;
-      text-align: left;
-      font-size: 14px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
     }
-    #sidebar div {
+
+    #sidebar h5 {
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    #sidebar ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    #sidebar li {
+      margin: 5px 0;
       cursor: pointer;
-      margin-bottom: 5px;
+      font-weight: 500;
     }
-    #sidebar .answered { color: green; font-weight: bold; }
+
+    #sidebar li.answered {
+      color: #28a745;
+    }
   </style>
 </head>
 <body class="container py-5">
   <h2>Leave Policy Quiz</h2>
-
-  <div id="timerBarContainer" class="mb-3">
-    <div class="progress">
-      <div id="timerBar" class="progress-bar"></div>
-    </div>
+  <div id="timerDisplay">40:00</div>
+  <div id="sidebar">
+    <h5>Answers</h5>
+    <ul id="navList"></ul>
   </div>
-
   <form id="quizForm"></form>
 
   <div id="submitButtonContainer" class="text-center mt-4">
@@ -91,8 +133,6 @@
   </div>
 
   <div id="scoreCard" class="text-center"></div>
-
-  <div id="sidebar"></div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
@@ -104,72 +144,62 @@
 
     const USER_ID = 'user_001';
     let loadedQuestions = [];
-    let timerDuration = 2400;
+    let timerDuration = 40 * 60; // 40 minutes
     let timerInterval;
 
     async function loadQuestions() {
       const { data, error } = await supabase.from('questions').select('*');
       if (error) return console.error('❌ Supabase fetch error:', error);
-      loadedQuestions = data.sort(() => 0.5 - Math.random());
 
+      loadedQuestions = data.sort(() => 0.5 - Math.random());
       const form = document.getElementById('quizForm');
       form.innerHTML = '';
+      document.getElementById('navList').innerHTML = '';
 
       loadedQuestions.forEach((q, i) => {
+        const qId = `q${q.id}`;
         form.innerHTML += `
           <div class="question-block" id="qblock-${q.id}">
             <strong>Q${i + 1}: ${q.question}</strong><br>
-            <div class="form-check"><input type="radio" name="q${q.id}" value="a" class="form-check-input"> A. ${q.option_a}</div>
-            <div class="form-check"><input type="radio" name="q${q.id}" value="b" class="form-check-input"> B. ${q.option_b}</div>
-            <div class="form-check"><input type="radio" name="q${q.id}" value="c" class="form-check-input"> C. ${q.option_c}</div>
-            <div class="form-check"><input type="radio" name="q${q.id}" value="d" class="form-check-input mb-2"> D. ${q.option_d}</div>
+            <div class="form-check"><input type="radio" name="${qId}" value="a" class="form-check-input" onchange="markAnswered(${i}, 'A')"> A. ${q.option_a}</div>
+            <div class="form-check"><input type="radio" name="${qId}" value="b" class="form-check-input" onchange="markAnswered(${i}, 'B')"> B. ${q.option_b}</div>
+            <div class="form-check"><input type="radio" name="${qId}" value="c" class="form-check-input" onchange="markAnswered(${i}, 'C')"> C. ${q.option_c}</div>
+            <div class="form-check"><input type="radio" name="${qId}" value="d" class="form-check-input mb-2" onchange="markAnswered(${i}, 'D')"> D. ${q.option_d}</div>
             <div class="mt-2" id="correct-${q.id}" style="display:none;"><em>✅ Correct answer: ${q.correct_option?.toUpperCase()}</em></div>
           </div>
         `;
+
+        document.getElementById('navList').innerHTML += `<li id="nav-${i}" onclick="document.getElementById('qblock-${q.id}').scrollIntoView({behavior: 'smooth'})">${i + 1}</li>`;
       });
-      renderSidebar();
-      attachListeners();
+
       startTimer();
     }
 
+    window.markAnswered = function(index, letter) {
+      const li = document.getElementById(`nav-${index}`);
+      li.classList.add('answered');
+      li.textContent = `${index + 1}. ${letter}`;
+    }
+
     function startTimer() {
-      const bar = document.getElementById('timerBar');
+      const display = document.getElementById('timerDisplay');
       let timeLeft = timerDuration;
+      updateDisplay();
       clearInterval(timerInterval);
       timerInterval = setInterval(() => {
         timeLeft--;
-        bar.style.width = `${(timeLeft / timerDuration) * 100}%`;
+        updateDisplay();
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
           submitQuiz();
         }
       }, 1000);
-    }
 
-    function attachListeners() {
-      loadedQuestions.forEach((q, i) => {
-        const radios = document.querySelectorAll(`input[name=q${q.id}]`);
-        radios.forEach(r => {
-          r.addEventListener('change', () => renderSidebar());
-        });
-      });
-    }
-
-    function renderSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      sidebar.innerHTML = '<strong>Answers</strong><hr>';
-      loadedQuestions.forEach((q, i) => {
-        const selected = document.querySelector(`input[name=q${q.id}]:checked`);
-        const letter = selected ? selected.value.toUpperCase() : '-';
-        const status = selected ? 'answered' : '';
-        sidebar.innerHTML += `<div class="${status}" onclick="scrollToQuestion(${i})">${i + 1}. ${letter}</div>`;
-      });
-    }
-
-    window.scrollToQuestion = function(index) {
-      const q = loadedQuestions[index];
-      const el = document.getElementById(`qblock-${q.id}`);
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      function updateDisplay() {
+        const minutes = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+        const seconds = String(timeLeft % 60).padStart(2, '0');
+        display.textContent = `${minutes}:${seconds}`;
+      }
     }
 
     window.submitQuiz = async function () {
@@ -182,21 +212,17 @@
       for (let q of loadedQuestions) {
         const selected = formData.get(`q${q.id}`);
         if (!selected) continue;
-
-        const isCorrect = selected.toLowerCase() === q.correct_option.toLowerCase();
+        const selectedNormalized = selected.toLowerCase();
+        const correctNormalized = q.correct_option?.toLowerCase();
+        const isCorrect = selectedNormalized === correctNormalized;
         if (isCorrect) correctCount++;
 
-        responses.push({
-          question_id: q.id,
-          user_id: USER_ID,
-          selected_option: selected,
-          is_correct: isCorrect
-        });
+        responses.push({ question_id: q.id, user_id: USER_ID, selected_option: selected, is_correct: isCorrect });
 
         const qBlock = document.getElementById(`qblock-${q.id}`);
         const radios = qBlock.querySelectorAll('input[type="radio"]');
         radios.forEach(r => {
-          if (r.value.toLowerCase() === q.correct_option.toLowerCase()) {
+          if (r.value.toLowerCase() === correctNormalized) {
             r.parentElement.classList.add('correct');
           } else if (r.checked) {
             r.parentElement.classList.add('incorrect');
@@ -209,9 +235,8 @@
       await supabase.from('responses').insert(responses);
       await supabase.from('scores').insert([{ user_id: USER_ID, score: correctCount, total: loadedQuestions.length }]);
 
-      document.getElementById('submitButtonContainer').querySelector('button.btn-primary').disabled = true;
-      document.getElementById('submitButtonContainer').querySelector('button.btn-secondary').style.display = 'inline-block';
-
+      document.querySelector('#submitButtonContainer button.btn-primary').disabled = true;
+      document.querySelector('#submitButtonContainer button.btn-secondary').style.display = 'inline-block';
       const scoreCard = document.getElementById('scoreCard');
       scoreCard.innerHTML = `<h4>🎓 Your Score</h4><p><strong>${correctCount} / ${loadedQuestions.length}</strong> correct</p>`;
       scoreCard.style.display = 'block';
