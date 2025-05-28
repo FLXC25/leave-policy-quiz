@@ -6,16 +6,18 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
-      background: url('TzuChiBackground.jpeg') no-repeat center center fixed;
+      background: url('Tzu Chi Background.jpeg') no-repeat center center fixed;
       background-size: cover;
       font-family: 'Segoe UI', sans-serif;
       text-align: center;
     }
+
     h2 {
       font-weight: 700;
       color: #0a3d62;
       margin-bottom: 40px;
     }
+
     .question-block {
       background: white;
       padding: 24px;
@@ -25,31 +27,39 @@
       max-width: 700px;
       text-align: left;
     }
+
     .correct {
       background-color: #d4edda !important;
       border-left: 6px solid #28a745;
     }
+
     .incorrect {
       background-color: #f8d7da !important;
       border-left: 6px solid #dc3545;
     }
+
     .form-check {
       padding-left: 1.5rem;
     }
+
     .btn-primary {
       background-color: #2e86de;
       border: none;
     }
+
     .btn-secondary {
       background-color: #636e72;
       border: none;
     }
+
     .btn:hover {
       opacity: 0.9;
     }
+
     #submitButtonContainer {
       margin-bottom: 60px;
     }
+
     #scoreCard {
       display: none;
       background: #ffffffcc;
@@ -59,18 +69,26 @@
       margin: 40px auto;
       box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
     }
-    #timerBar {
-      height: 10px;
-      background: #28a745;
-      transition: width 1s linear;
+
+    #countdownTimer {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      background-color: #ffffffcc;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #d63031;
+      z-index: 999;
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
     }
   </style>
 </head>
 <body class="container py-5">
   <h2>Leave Policy Quiz</h2>
-  <div class="progress mb-4" style="height: 12px;">
-    <div id="timerBar" class="progress-bar"></div>
-  </div>
+
+  <div id="countdownTimer">40:00</div>
 
   <form id="quizForm"></form>
 
@@ -91,13 +109,15 @@
 
     const USER_ID = 'user_001';
     let loadedQuestions = [];
-    let timerDuration = 60;
+    let timerDuration = 40 * 60;
     let timerInterval;
 
     async function loadQuestions() {
       const { data, error } = await supabase.from('questions').select('*');
       if (error) return console.error('❌ Supabase fetch error:', error);
+
       loadedQuestions = data.sort(() => 0.5 - Math.random());
+
       const form = document.getElementById('quizForm');
       form.innerHTML = '';
       loadedQuestions.forEach((q, i) => {
@@ -112,18 +132,20 @@
           </div>
         `;
       });
+
       startTimer();
     }
 
     function startTimer() {
-      const bar = document.getElementById('timerBar');
+      const timerDisplay = document.getElementById('countdownTimer');
       let timeLeft = timerDuration;
-      bar.style.width = '100%';
       clearInterval(timerInterval);
       timerInterval = setInterval(() => {
+        const mins = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+        const secs = String(timeLeft % 60).padStart(2, '0');
+        timerDisplay.textContent = `${mins}:${secs}`;
         timeLeft--;
-        bar.style.width = `${(timeLeft / timerDuration) * 100}%`;
-        if (timeLeft <= 0) {
+        if (timeLeft < 0) {
           clearInterval(timerInterval);
           submitQuiz();
         }
@@ -135,13 +157,15 @@
       const form = document.getElementById('quizForm');
       const formData = new FormData(form);
       const responses = [];
-
       let correctCount = 0;
 
       for (let q of loadedQuestions) {
         const selected = formData.get(`q${q.id}`);
         if (!selected) continue;
-        const isCorrect = selected.toLowerCase() === q.correct_option?.toLowerCase();
+
+        const selectedNormalized = selected.toLowerCase();
+        const correctNormalized = q.correct_option?.toLowerCase();
+        const isCorrect = selectedNormalized === correctNormalized;
         if (isCorrect) correctCount++;
 
         responses.push({
@@ -154,7 +178,7 @@
         const qBlock = document.getElementById(`qblock-${q.id}`);
         const radios = qBlock.querySelectorAll('input[type="radio"]');
         radios.forEach(r => {
-          if (r.value.toLowerCase() === q.correct_option?.toLowerCase()) {
+          if (r.value.toLowerCase() === correctNormalized) {
             r.parentElement.classList.add('correct');
           } else if (r.checked) {
             r.parentElement.classList.add('incorrect');
