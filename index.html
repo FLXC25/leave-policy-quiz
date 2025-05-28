@@ -6,7 +6,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
-      background: url('263dc2fa-55c1-44cb-b97f-d3a4468b7d67.png') no-repeat center center fixed;
+      background: url('background.jpg') no-repeat center center fixed;
       background-size: cover;
       font-family: 'Segoe UI', sans-serif;
       text-align: center;
@@ -82,6 +82,7 @@
   <div class="progress mb-4" style="height: 12px;">
     <div id="timerBar" class="progress-bar"></div>
   </div>
+
   <form id="quizForm"></form>
 
   <div id="submitButtonContainer" class="text-center mt-4">
@@ -101,14 +102,13 @@
 
     const USER_ID = 'user_001';
     let loadedQuestions = [];
-    let timerDuration = 60; // seconds
+    let timerDuration = 60;
     let timerInterval;
 
     async function loadQuestions() {
       const { data, error } = await supabase.from('questions').select('*');
       if (error) return console.error('❌ Supabase fetch error:', error);
 
-      // Shuffle questions
       loadedQuestions = data.sort(() => 0.5 - Math.random());
 
       const form = document.getElementById('quizForm');
@@ -182,12 +182,10 @@
       }
 
       await supabase.from('responses').insert(responses);
-      await supabase.from('scores').insert([
-        { user_id: USER_ID, score: correctCount, total: loadedQuestions.length }
-      ]);
+      await supabase.from('scores').insert([{ user_id: USER_ID, score: correctCount, total: loadedQuestions.length }]);
 
-      document.getElementById('submitButtonContainer').querySelector('button.btn-primary').disabled = true;
-      document.getElementById('submitButtonContainer').querySelector('button.btn-secondary').style.display = 'inline-block';
+      document.querySelector('#submitButtonContainer button.btn-primary').disabled = true;
+      document.querySelector('#submitButtonContainer button.btn-secondary').style.display = 'inline-block';
 
       const scoreCard = document.getElementById('scoreCard');
       scoreCard.innerHTML = `<h4>🎓 Your Score</h4><p><strong>${correctCount} / ${loadedQuestions.length}</strong> correct</p>`;
@@ -195,8 +193,8 @@
     };
 
     window.retryQuiz = function () {
-      document.getElementById('submitButtonContainer').querySelector('button.btn-primary').disabled = false;
-      document.getElementById('submitButtonContainer').querySelector('button.btn-secondary').style.display = 'none';
+      document.querySelector('#submitButtonContainer button.btn-primary').disabled = false;
+      document.querySelector('#submitButtonContainer button.btn-secondary').style.display = 'none';
       document.getElementById('scoreCard').style.display = 'none';
       loadQuestions();
     };
