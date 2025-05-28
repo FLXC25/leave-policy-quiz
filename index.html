@@ -116,7 +116,7 @@
           return;
         }
 
-        const isCorrect = selected === q.correct_option;
+        const isCorrect = selected.toLowerCase() === q.correct_option.toLowerCase();
         if (isCorrect) correctCount++;
 
         responses.push({
@@ -129,7 +129,7 @@
         const qBlock = document.getElementById(`qblock-${q.id}`);
         const radios = qBlock.querySelectorAll('input[type="radio"]');
         radios.forEach(r => {
-          if (r.value === q.correct_option) {
+          if (r.value.toLowerCase() === q.correct_option.toLowerCase()) {
             r.parentElement.classList.add('correct');
           } else if (r.checked) {
             r.parentElement.classList.add('incorrect');
