@@ -5,28 +5,46 @@
   <title>Leave Policy Quiz</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    .question-block { margin-bottom: 30px; }
-    .correct { background-color: #00ff3c; }
-    .incorrect { background-color: #ff0015; }
+    body {
+      background-color: #f8f9fa;
+    }
+    h2 {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .question-block {
+      margin-bottom: 40px;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      background-color: white;
+    }
+    .correct {
+      background-color: #d4edda !important;
+    }
+    .incorrect {
+      background-color: #f8d7da !important;
+    }
   </style>
 </head>
-<body class="container py-4">
-  <h2 class="mb-4">Leave Policy Quiz</h2>
+<body class="container py-5">
+  <h2>📝 Leave Policy Quiz</h2>
 
   <form id="quizForm"></form>
 
   <div id="submitButtonContainer" class="text-center mt-4">
-    <button type="button" class="btn btn-primary" onclick="submitQuiz()">Submit</button>
-    <button type="button" class="btn btn-secondary ms-2" onclick="retryQuiz()" style="display:none;">Retry</button>
+    <button type="button" class="btn btn-success px-4" onclick="submitQuiz()">Submit</button>
+    <button type="button" class="btn btn-outline-secondary ms-3 px-4" onclick="retryQuiz()" style="display:none;">Retry</button>
   </div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
     const supabaseUrl = 'https://gppjdssiygsurhpkiggh.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwcGpkc3NpeWdzdXJocGtpZ2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyNjc1NjksImV4cCI6MjA2Mzg0MzU2OX0.sIEgaXbDtAoAlarYxRA0Pe41eXQ-plfhRrhSSmK0AP0'; // Replace with your real anon key
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwcGpkc3NpeWdzdXJocGtpZ2doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgyNjc1NjksImV4cCI6MjA2Mzg0MzU2OX0.sIEgaXbDtAoAlarYxRA0Pe41eXQ-plfhRrhSSmK0AP0';
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const USER_ID = 'user_001'; // You can replace this with actual auth user.id
+    const USER_ID = 'user_001';
 
     let loadedQuestions = [];
 
@@ -40,11 +58,11 @@
       data.forEach((q, i) => {
         form.innerHTML += `
           <div class="question-block" id="qblock-${q.id}">
-            <strong>Q${i + 1}: ${q.question}</strong><br>
-            <div class="form-check"><input type="radio" name="q${q.id}" value="a" class="form-check-input"> A. ${q.option_a}</div>
-            <div class="form-check"><input type="radio" name="q${q.id}" value="b" class="form-check-input"> B. ${q.option_b}</div>
-            <div class="form-check"><input type="radio" name="q${q.id}" value="c" class="form-check-input"> C. ${q.option_c}</div>
-            <div class="form-check"><input type="radio" name="q${q.id}" value="d" class="form-check-input mb-2"> D. ${q.option_d}</div>
+            <h5>Q${i + 1}: ${q.question}</h5>
+            <div class="form-check"><input type="radio" name="q${q.id}" value="a" class="form-check-input"> <label class="form-check-label">${q.option_a}</label></div>
+            <div class="form-check"><input type="radio" name="q${q.id}" value="b" class="form-check-input"> <label class="form-check-label">${q.option_b}</label></div>
+            <div class="form-check"><input type="radio" name="q${q.id}" value="c" class="form-check-input"> <label class="form-check-label">${q.option_c}</label></div>
+            <div class="form-check"><input type="radio" name="q${q.id}" value="d" class="form-check-input mb-2"> <label class="form-check-label">${q.option_d}</label></div>
           </div>
         `;
       });
@@ -54,7 +72,6 @@
       const form = document.getElementById('quizForm');
       const formData = new FormData(form);
       const responses = [];
-
       let correctCount = 0;
 
       for (let q of loadedQuestions) {
